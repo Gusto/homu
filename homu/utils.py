@@ -63,9 +63,9 @@ def lazy_debug(logger, f):
         logger.debug(f())
 
 
-def logged_call(args):
+def logged_call(args, env=None):
     try:
-        subprocess.check_call(args, stdout=subprocess.DEVNULL, stderr=None)
+        subprocess.check_call(args, stdout=subprocess.DEVNULL, stderr=None, env=env)
     except subprocess.CalledProcessError:
         print('* Failed to execute command: {}'.format(args))
         raise
