@@ -20,6 +20,7 @@ import subprocess
 from .git_helper import SSH_KEY_FILE
 import shlex
 import random
+import datetime
 
 STATUS_TO_PRIORITY = {
     'success': 0,
@@ -789,6 +790,27 @@ def create_merge(state, repo_cfg, branch, git_cfg, ensure_merge_equal=False):
                         return ''
 
                 return git_push(git_cmd, branch, state)
+
+        elif repo_cfg.get('squash', False):
+            # check out PR head to homu-tmp
+            utils.logged_call(['git', '-C', fpath, 'checkout', '-B', 'homu-tmp', state.head_sha])
+            # get author name and email from most recent commit
+            author_name = str(subprocess.check_output(['git', '-C', fpath, 'log', '-1', '--pretty=%aN']), 'utf-8').rstrip()
+            author_email = str(subprocess.check_output(['git', '-C', fpath, 'log', '-1', '--pretty=%aE']), 'utf-8').rstrip()
+
+            try:
+                # check out the base commit
+                utils.logged_call(['git', '-C', fpath, 'checkout', '-B', branch, base_sha])
+                # create an (uncommitted) squash merge of the PR
+                utils.logged_call(['git', '-C', fpath, 'merge', 'heads/homu-tmp', '--squash'])
+                # commit the squash of the PR with the last committer as author and Homu as committer
+                utils.logged_call(['git', '-C', fpath, '-c', 'user.name="{}"'.format(author_name), '-c', 'user.email="{}"'.format(author_email), 'commit', '-m', merge_msg],
+                        env=dict(os.environ, GIT_COMMITTER_NAME=shlex.quote(git_cfg['name']), GIT_COMMITTER_EMAIL=shlex.quote(git_cfg['email']), GIT_COMMITTER_DATE=shlex.quote(datetime.datetime.utcnow().isoformat())))
+            except subprocess.CalledProcessError:
+                desc = 'Squashing failed'
+            else:
+                return git_push(fpath, branch, state)
+
         else:
             utils.logged_call(git_cmd(
                 'checkout',
@@ -840,7 +862,7 @@ def create_merge(state, repo_cfg, branch, git_cfg, ensure_merge_equal=False):
 
                     return git_push(git_cmd, branch, state)
     else:
-        if repo_cfg.get('linear', False) or repo_cfg.get('autosquash', False):
+        if repo_cfg.get('linear', False) or repo_cfg.get('autosquash', False) or repo_cfg.get('squash', False):
             raise RuntimeError('local_git must be turned on to use this feature')  # noqa
 
         # if we're merging using the GitHub API, we have no way to predict
