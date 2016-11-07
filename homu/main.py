@@ -792,6 +792,8 @@ def create_merge(state, repo_cfg, branch, git_cfg, ensure_merge_equal=False):
                 return git_push(git_cmd, branch, state)
 
         elif repo_cfg.get('squash', False):
+            # the squashed merge message should look like the PR itself
+            merge_msg = '{}\n\n{}\n\nCloses #{}, landed by @{}'.format(state.title, state.body, state.num, '<try>' if state.try_ else state.approved_by)
             # check out PR head to homu-tmp
             utils.logged_call(['git', '-C', fpath, 'checkout', '-B', 'homu-tmp', state.head_sha])
             # get author name and email from most recent commit
