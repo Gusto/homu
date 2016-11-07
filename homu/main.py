@@ -804,8 +804,19 @@ def create_merge(state, repo_cfg, branch, git_cfg, ensure_merge_equal=False):
                 # create an (uncommitted) squash merge of the PR
                 utils.logged_call(['git', '-C', fpath, 'merge', 'heads/homu-tmp', '--squash'])
                 # commit the squash of the PR with the last committer as author and Homu as committer
-                utils.logged_call(['git', '-C', fpath, '-c', 'user.name="{}"'.format(author_name), '-c', 'user.email="{}"'.format(author_email), 'commit', '-m', merge_msg],
-                        env=dict(os.environ, GIT_COMMITTER_NAME=shlex.quote(git_cfg['name']), GIT_COMMITTER_EMAIL=shlex.quote(git_cfg['email']), GIT_COMMITTER_DATE=shlex.quote(datetime.datetime.utcnow().isoformat())))
+                utils.logged_call(
+                    [
+                        'git', '-C', fpath,
+                        '-c', 'user.name="{}"'.format(author_name),
+                        '-c', 'user.email="{}"'.format(author_email),
+                        'commit', '-m', merge_msg
+                    ],
+                    env=dict(os.environ,
+                        GIT_COMMITTER_NAME=shlex.quote(git_cfg['name']),
+                        GIT_COMMITTER_EMAIL=shlex.quote(git_cfg['email']),
+                        GIT_COMMITTER_DATE=shlex.quote(datetime.datetime.utcnow().isoformat())
+                    )
+                )
             except subprocess.CalledProcessError:
                 desc = 'Squashing failed'
             else:
