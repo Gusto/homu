@@ -803,7 +803,7 @@ def create_merge(state, repo_cfg, branch, git_cfg, ensure_merge_equal=False):
                 # create an (uncommitted) squash merge of the PR
                 utils.logged_call(git_cmd('merge', 'heads/homu-tmp', '--squash'))
                 # commit the squash of the PR with the last committer as author and Homu as committer
-                utils.logged_call(
+                utils.printed_call(
                     git_cmd(
                         '-c', 'user.name="{}"'.format(author_name),
                         '-c', 'user.email="{}"'.format(author_email),
