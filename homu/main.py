@@ -792,28 +792,23 @@ def create_merge(state, repo_cfg, branch, git_cfg, ensure_merge_equal=False):
             # the squashed merge message should look like the PR itself
             merge_msg = '{}\n\n{}\n\nCloses #{}, landed by @{}'.format(state.title, state.body, state.num, '<try>' if state.try_ else state.approved_by)
             # check out PR head to homu-tmp
-            utils.logged_call(['git', '-C', fpath, 'checkout', '-B', 'homu-tmp', state.head_sha])
+            utils.logged_call(git_cmd('checkout', '-B', 'homu-tmp', state.head_sha))
             # get author name and email from most recent commit
-            author_name = str(subprocess.check_output(['git', '-C', fpath, 'log', '-1', '--pretty=%aN']), 'utf-8').rstrip()
-            author_email = str(subprocess.check_output(['git', '-C', fpath, 'log', '-1', '--pretty=%aE']), 'utf-8').rstrip()
+            author_name = str(subprocess.check_output(git_cmd('log', '-1', '--pretty=%aN')), 'utf-8').rstrip()
+            author_email = str(subprocess.check_output(git_cmd('log', '-1', '--pretty=%aE')), 'utf-8').rstrip()
 
             try:
                 # check out the base commit
-                utils.logged_call(['git', '-C', fpath, 'checkout', '-B', branch, base_sha])
+                utils.logged_call(git_cmd('checkout', '-B', branch, base_sha))
                 # create an (uncommitted) squash merge of the PR
-                utils.logged_call(['git', '-C', fpath,
-                    '-c', 'user.name="{}"'.format(author_name),
-                    '-c', 'user.email="{}"'.format(author_email),
-                    'merge', 'heads/homu-tmp', '--squash'
-                ])
+                utils.logged_call(git_cmd('merge', 'heads/homu-tmp', '--squash'))
                 # commit the squash of the PR with the last committer as author and Homu as committer
                 utils.logged_call(
-                    [
-                        'git', '-C', fpath,
+                    git_cmd(
                         '-c', 'user.name="{}"'.format(author_name),
                         '-c', 'user.email="{}"'.format(author_email),
                         'commit', '-m', merge_msg
-                    ],
+                    ),
                     env=dict(os.environ,
                         GIT_COMMITTER_NAME=shlex.quote(git_cfg['name']),
                         GIT_COMMITTER_EMAIL=shlex.quote(git_cfg['email']),
@@ -823,7 +818,7 @@ def create_merge(state, repo_cfg, branch, git_cfg, ensure_merge_equal=False):
             except subprocess.CalledProcessError:
                 desc = 'Squashing failed'
             else:
-                return git_push(fpath, branch, state)
+                return git_push(git_cmd, branch, state)
 
         else:
             utils.logged_call(git_cmd(
