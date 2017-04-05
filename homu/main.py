@@ -413,9 +413,6 @@ def parse_commands(body, username, repo_cfg, state, my_username, db, states,
             if not _reviewer_auth_verified:
                 continue
 
-            if word == 'land':
-                state.rollup = True
-
             if not sha and i + 1 < len(words):
                 cur_sha = sha_or_blank(words[i + 1])
             else:
