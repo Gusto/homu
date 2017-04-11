@@ -816,7 +816,7 @@ def create_merge(state, repo_cfg, branch, git_cfg, ensure_merge_equal=False):
                     )
                 )
             except subprocess.CalledProcessError:
-                desc = 'Squashing failed'
+                pass
             else:
                 return git_push(git_cmd, branch, state)
 
