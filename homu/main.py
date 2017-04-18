@@ -791,19 +791,23 @@ def create_merge(state, repo_cfg, branch, git_cfg, ensure_merge_equal=False):
         elif repo_cfg.get('squash', False):
             # the squashed merge message should look like the PR itself
             merge_msg = '{}\n\n{}\n\nCloses #{}, landed by @{}'.format(state.title, state.body, state.num, '<try>' if state.try_ else state.approved_by)
+
             # check out PR head to homu-tmp
             utils.logged_call(git_cmd('checkout', '-B', 'homu-tmp', state.head_sha))
-            # get author name and email from most recent commit
-            author_name = str(subprocess.check_output(git_cmd('log', '-1', '--pretty=%aN')), 'utf-8').rstrip()
-            author_email = str(subprocess.check_output(git_cmd('log', '-1', '--pretty=%aE')), 'utf-8').rstrip()
+
+            # set up the squash merge committer to be the bot
             author_env = dict(os.environ,
                 GIT_COMMITTER_NAME=shlex.quote(git_cfg['name']),
                 GIT_COMMITTER_EMAIL=shlex.quote(git_cfg['email']),
                 GIT_COMMITTER_DATE=shlex.quote(datetime.datetime.utcnow().isoformat())
             )
 
-            def authored_git_cmd(args):
-              return lambda *args: git_cmd([
+            # get commit author name and email from most recent commit
+            author_name = str(subprocess.check_output(git_cmd('log', '-1', '--pretty=%aN')), 'utf-8').rstrip()
+            author_email = str(subprocess.check_output(git_cmd('log', '-1', '--pretty=%aE')), 'utf-8').rstrip()
+
+            def authored_git_cmd(*args):
+              return git_cmd([
                 '-c', 'user.name="{}"'.format(author_name),
                 '-c', 'user.email="{}"'.format(author_email)
               ] + list(args))
