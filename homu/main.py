@@ -796,25 +796,25 @@ def create_merge(state, repo_cfg, branch, git_cfg, ensure_merge_equal=False):
             # get author name and email from most recent commit
             author_name = str(subprocess.check_output(git_cmd('log', '-1', '--pretty=%aN')), 'utf-8').rstrip()
             author_email = str(subprocess.check_output(git_cmd('log', '-1', '--pretty=%aE')), 'utf-8').rstrip()
+            author_env = dict(os.environ,
+                GIT_COMMITTER_NAME=shlex.quote(git_cfg['name']),
+                GIT_COMMITTER_EMAIL=shlex.quote(git_cfg['email']),
+                GIT_COMMITTER_DATE=shlex.quote(datetime.datetime.utcnow().isoformat())
+            )
+
+            def authored_git_cmd(args):
+              return lambda *args: git_cmd([
+                '-c', 'user.name="{}"'.format(author_name),
+                '-c', 'user.email="{}"'.format(author_email)
+              ] + list(args))
 
             try:
                 # check out the base commit
                 utils.logged_call(git_cmd('checkout', '-B', branch, base_sha))
                 # create an (uncommitted) squash merge of the PR
-                utils.logged_call(git_cmd('merge', 'heads/homu-tmp', '--squash'))
+                utils.printed_call(authored_git_cmd('merge', 'heads/homu-tmp', '--squash'), env=author_env)
                 # commit the squash of the PR with the last committer as author and Homu as committer
-                utils.printed_call(
-                    git_cmd(
-                        '-c', 'user.name="{}"'.format(author_name),
-                        '-c', 'user.email="{}"'.format(author_email),
-                        'commit', '-m', merge_msg
-                    ),
-                    env=dict(os.environ,
-                        GIT_COMMITTER_NAME=shlex.quote(git_cfg['name']),
-                        GIT_COMMITTER_EMAIL=shlex.quote(git_cfg['email']),
-                        GIT_COMMITTER_DATE=shlex.quote(datetime.datetime.utcnow().isoformat())
-                    )
-                )
+                utils.printed_call(authored_git_cmd('commit', '-m', merge_msg), env=author_env)
             except subprocess.CalledProcessError:
                 pass
             else:
