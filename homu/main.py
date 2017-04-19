@@ -807,7 +807,7 @@ def create_merge(state, repo_cfg, branch, git_cfg, ensure_merge_equal=False):
             author_email = str(subprocess.check_output(git_cmd('log', '-1', '--pretty=%aE')), 'utf-8').rstrip()
 
             def authored_git_cmd(*args):
-              return git_cmd([
+              return git_cmd(*[
                 '-c', 'user.name="{}"'.format(author_name),
                 '-c', 'user.email="{}"'.format(author_email)
               ] + list(args))
