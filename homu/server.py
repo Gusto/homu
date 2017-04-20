@@ -419,6 +419,9 @@ def github():
         ref = info['ref'][len('refs/heads/'):]
 
         for state in list(g.states[repo_label].values()):
+            if not info['head_commit']:
+                continue
+
             if state.base_ref == ref:
                 state.set_mergeable(None, cause={
                     'sha': info['head_commit']['id'],
