@@ -1046,8 +1046,7 @@ def try_status_exemption(state, repo_cfg, git_cfg):
     # let's first check that all the statuses we want are set to success
     statuses_pass = set()
     for info in utils.github_iter_statuses(state.get_repo(), state.head_sha):
-        context_present = [True for key in status_equivalences if key.startswith(info.context)]
-        if context_present and info.state == 'success':
+        if info.context in status_equivalences and info.state == 'success':
             statuses_pass.add(status_equivalences[info.context])
 
     if statuses_all != statuses_pass:
