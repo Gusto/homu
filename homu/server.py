@@ -405,11 +405,12 @@ def github():
             g.queue_handler()
 
         elif action in ['assigned', 'unassigned']:
-            state = g.states[repo_label][pull_num]
-            state.assignee = (info['pull_request']['assignee']['login'] if
-                              info['pull_request']['assignee'] else '')
+            state = g.states.get(repo_label, {}).get(pull_num)
+            if state:
+                state.assignee = (info['pull_request']['assignee']['login'] if
+                                  info['pull_request']['assignee'] else '')
 
-            state.save()
+                state.save()
 
         else:
             lazy_debug(logger, lambda: 'Invalid pull_request action: {}'.format(action))  # noqa
